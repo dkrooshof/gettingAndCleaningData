@@ -45,7 +45,7 @@ output_data$Activity <- sapply(strsplit(as.character(output_data$splitby), ","),
 output_data <- output_data[,c(68,69,2:67)]
 
 ## Write file to working directory:
-write.csv(output_data,"output_data.csv")
+write.table(output_data,"output_data.txt",sep=",")
 
 
 
