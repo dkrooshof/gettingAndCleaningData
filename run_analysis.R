@@ -18,10 +18,12 @@ testActivities <- read.table("UCI HAR Dataset/test/y_test.txt")
 trainActivities <- read.table("UCI HAR Dataset/train/y_train.txt")
 activities <- rbind(testActivities,trainActivities)
 
-## Import activity labels, merge:
+## Import activity labels, merge (merge does NOT retain row order!):
+activities$id  <- 1:nrow(activities) #id column added
 activityLabels <- read.table("UCI HAR Dataset/activity_labels.txt")
 activities <- merge(activities, activityLabels,by.x="V1",by.y="V1")
-names(activities) <- c("ActivityNr", "Activity")
+activities <- activities[order(activities$id),] #resort by id to regain original order
+names(activities) <- c("ActivityNr","id", "Activity")
 
 ## Import Subject numbers, row bind, rename vector:
 testSubjects <- read.table("UCI HAR Dataset/test/subject_test.txt")
@@ -34,15 +36,11 @@ match <- regexpr("mean\\(\\)|std\\(\\)",names(data),perl=TRUE)
 data <- data[,match > 0]
 
 ## Column bind activities and subjects:
-data <- cbind(activities,subjects,data)
+data <- cbind(subjects,activities,data)
 
-## Take average by Activity by Subject:
-data$splitby <- factor(paste0(data$Activity,",",data$Subject))
-melted_data <- melt(data, id=c("ActivityNr","Activity","Subject","splitby"))
-output_data <- cast(melted_data, splitby ~ variable, mean)
-output_data$Subject <- sapply(strsplit(as.character(output_data$splitby), ","), "[", 2)
-output_data$Activity <- sapply(strsplit(as.character(output_data$splitby), ","), "[", 1)
-output_data <- output_data[,c(68,69,2:67)]
+## Reshape the data:
+molten_data <- melt(data, id=c("Subject","ActivityNr","id","Activity"))
+output_data <- cast(molten_data, Subject + Activity ~ variable, mean)
 
 ## Write file to working directory:
 write.table(output_data,"output_data.txt",sep=",")
